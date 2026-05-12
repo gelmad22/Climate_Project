@@ -12,7 +12,7 @@ public class DtoMapper {
         Field[] fields = o.getClass().getDeclaredFields();
 
         for (Field field : fields) {
-            if(field.getAnnotation(ToDto.class) == null){
+            if(field.isAnnotationPresent(ToDto.class)){
                 continue;
             }
 
