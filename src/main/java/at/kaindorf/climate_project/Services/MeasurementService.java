@@ -1,6 +1,6 @@
 package at.kaindorf.climate_project.Services;
 
-import Repositories.MeasurementRepository;
+import at.kaindorf.climate_project.repositories.MeasurementRepository;
 import at.kaindorf.climate_project.pojo.Measurement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

@@ -1,4 +1,4 @@
-package Repositories;
+package at.kaindorf.climate_project.repositories;
 
 import at.kaindorf.climate_project.pojo.Measurement;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @Repository
 public interface MeasurementRepository extends JpaRepository<Measurement, Long> {
+
     Optional<Measurement> findByStartTime(LocalDateTime startTime);
 
     boolean existsByStartTime(LocalDateTime startTime);
