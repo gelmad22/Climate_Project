@@ -1,6 +1,7 @@
 package at.kaindorf.climate_project.pojo;
 
 import at.kaindorf.climate_project.annotations.ToDto;
+import at.kaindorf.climate_project.mapper.DtoMapper;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Entity
 @Data
@@ -32,5 +34,7 @@ public class Measurement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
 
-
+    public Map<String, Object> toDto() {
+        return DtoMapper.map(this);
+    }
 }
