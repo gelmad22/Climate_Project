@@ -1,7 +1,9 @@
 package at.kaindorf.climate_project;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
 
-@SpringBootApplication
+@Controller
+@RequiredArgsConstructor
 public class MainController {
 }
