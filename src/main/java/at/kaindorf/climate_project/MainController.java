@@ -9,8 +9,11 @@ import org.springframework.stereotype.Controller;
 @Controller
 @RequiredArgsConstructor
 public class MainController implements ApplicationRunner {
+
+    private final InitDB initDB;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        InitDB.createDataFromFile();
+        initDB.createDataFromFile();
     }
 }

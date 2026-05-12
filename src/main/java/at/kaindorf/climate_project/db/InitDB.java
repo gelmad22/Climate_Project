@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class InitDB {
-    public static void createDataFromFile() {
-
+    public void createDataFromFile() {
     }
 }
