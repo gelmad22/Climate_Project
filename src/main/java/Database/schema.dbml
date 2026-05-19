@@ -1,190 +1,36 @@
 // Ozon-Daten Analyse Backend
 // Spring Boot + PostgreSQL
-
-Enum import_status {
-  SUCCESS
-  PARTIAL_SUCCESS
-  FAILED
-}
+// Minimalmodell für Ozon-Messwerte aus JSON
 
 Table stations {
   id integer [primary key, note: 'Station-ID aus der JSON-Datei, z.B. 1528']
-  name varchar [note: 'Name der Messstation, z.B. Altendeich']
-  state varchar [note: 'Bundesland / Region']
-  latitude decimal(9,6)
-  longitude decimal(9,6)
-  height_m integer
-}
-
-Table pollutant_components {
-  id integer [primary key, note: 'Component ID aus JSON, bei Ozon = 3']
-  code varchar [not null, note: 'z.B. O3']
-  name varchar [not null, note: 'z.B. Ozon']
-  unit varchar [not null, note: 'z.B. µg/m³']
-}
-
-Table measurement_scopes {
-  id integer [primary key, note: 'Scope ID aus JSON, z.B. 2']
-  name varchar [not null, note: 'z.B. 1-Stunden-Mittelwert']
-  duration_hours integer [not null, note: 'Bei 1-Stunden-Mittelwert = 1']
-}
-
-Table import_batches {
-  id bigint [primary key, increment]
-  file_name varchar
-  imported_at timestamp [not null]
-  status import_status [not null]
-  total_records integer
-  successful_records integer
-  failed_records integer
-  error_message text
 }
 
 Table ozone_measurements {
   id bigint [primary key, increment]
 
   station_id integer [not null]
-  component_id integer [not null]
-  scope_id integer [not null]
-  import_batch_id bigint
 
-  start_time timestamp [not null, note: 'Key aus JSON, z.B. 2016-01-01 22:00:00']
-  end_time timestamp [not null, note: 'date end aus JSON']
+  start_time timestamp [not null, note: 'Startzeit der Messung, z.B. 2016-01-01 22:00:00']
+  end_time timestamp [not null, note: 'Endzeit der Messung']
   value_ug_m3 decimal(8,2) [not null, note: 'Ozonwert in µg/m³']
-  quality_index varchar [note: 'Index aus JSON, z.B. 0, 1, 2, 4']
 
-  created_at timestamp
+  created_at timestamp [note: 'Zeitpunkt, wann der Datensatz in die Datenbank gespeichert wurde']
 
   indexes {
-    (station_id, start_time, component_id, scope_id) [unique]
+    (station_id, start_time) [unique]
     (station_id, start_time)
     (station_id, value_ug_m3)
   }
 }
 
-Table ozone_thresholds {
-  id bigint [primary key, increment]
-  component_id integer [not null]
-  name varchar [not null, note: 'z.B. EU Ozon Zielwert']
-  threshold_value_ug_m3 decimal(8,2) [not null, note: 'z.B. 120']
-  averaging_period_hours integer [not null, note: 'z.B. 8 für 8-Stunden-Mittelwert']
-  description text
-  active boolean [not null]
-}
-
-Table daily_ozone_statistics {
-  id bigint [primary key, increment]
-
-  station_id integer [not null]
-  component_id integer [not null]
-  date date [not null]
-
-  average_value decimal(8,2)
-  min_value decimal(8,2)
-  min_value_time timestamp
-  max_value decimal(8,2)
-  max_value_time timestamp
-  range_value decimal(8,2)
-
-  highest_8h_average decimal(8,2)
-  is_critical_day boolean
-  measurement_count integer
-
-  indexes {
-    (station_id, component_id, date) [unique]
-  }
-}
-
-Table monthly_ozone_statistics {
-  id bigint [primary key, increment]
-
-  station_id integer [not null]
-  component_id integer [not null]
-  year integer [not null]
-  month integer [not null]
-
-  average_value decimal(8,2)
-  min_value decimal(8,2)
-  max_value decimal(8,2)
-  range_value decimal(8,2)
-  critical_days integer
-  measurement_count integer
-
-  indexes {
-    (station_id, component_id, year, month) [unique]
-  }
-}
-
-Table yearly_ozone_statistics {
-  id bigint [primary key, increment]
-
-  station_id integer [not null]
-  component_id integer [not null]
-  year integer [not null]
-
-  average_value decimal(8,2)
-  min_value decimal(8,2)
-  max_value decimal(8,2)
-  range_value decimal(8,2)
-  critical_days integer
-  highest_month integer
-  measurement_count integer
-
-  indexes {
-    (station_id, component_id, year) [unique]
-  }
-}
-
-Table critical_periods {
-  id bigint [primary key, increment]
-
-  station_id integer [not null]
-  component_id integer [not null]
-  threshold_id bigint [not null]
-
-  start_time timestamp [not null]
-  end_time timestamp [not null]
-  duration_hours integer [not null]
-  max_value decimal(8,2)
-  average_value decimal(8,2)
-
-  indexes {
-    (station_id, start_time, end_time)
-  }
-}
-
 Ref: ozone_measurements.station_id > stations.id
-Ref: ozone_measurements.component_id > pollutant_components.id
-Ref: ozone_measurements.scope_id > measurement_scopes.id
-Ref: ozone_measurements.import_batch_id > import_batches.id
 
-Ref: ozone_thresholds.component_id > pollutant_components.id
-
-Ref: daily_ozone_statistics.station_id > stations.id
-Ref: daily_ozone_statistics.component_id > pollutant_components.id
-
-Ref: monthly_ozone_statistics.station_id > stations.id
-Ref: monthly_ozone_statistics.component_id > pollutant_components.id
-
-Ref: yearly_ozone_statistics.station_id > stations.id
-Ref: yearly_ozone_statistics.component_id > pollutant_components.id
-
-Ref: critical_periods.station_id > stations.id
-Ref: critical_periods.component_id > pollutant_components.id
-Ref: critical_periods.threshold_id > ozone_thresholds.id
-
-Records stations(id, name, state) {
-  1528, 'Altendeich', 'Schleswig-Holstein'
+Records stations(id) {
+  1528
 }
 
-Records pollutant_components(id, code, name, unit) {
-  3, 'O3', 'Ozon', 'µg/m³'
-}
-
-Records measurement_scopes(id, name, duration_hours) {
-  2, '1-Stunden-Mittelwert', 1
-}
-
-Records ozone_thresholds(id, component_id, name, threshold_value_ug_m3, averaging_period_hours, description, active) {
-  1, 3, 'EU Ozon Zielwert', 120, 8, 'Maximaler täglicher 8-Stunden-Mittelwert', true
+Records ozone_measurements(id, station_id, start_time, end_time, value_ug_m3) {
+  1, 1528, '2016-01-01 22:00:00', '2016-01-01 23:00:00', 21.00
+  2, 1528, '2016-01-01 23:00:00', '2016-01-02 00:00:00', 31.00
 }
