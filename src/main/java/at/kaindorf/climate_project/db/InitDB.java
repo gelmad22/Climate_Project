@@ -22,13 +22,13 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 @Component
-public class InitDb implements CommandLineRunner {
+public class InitDB implements CommandLineRunner {
 
     private MeasurementService measurementService;
     private ObjectMapper objectMapper;
     private String importFilePath;
 
-    public InitDb(
+    public InitDB(
             MeasurementService measurementService,
             @Value("${climate.ozone.import.file:}") String importFilePath
     ) {
