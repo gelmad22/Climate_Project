@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -13,9 +14,11 @@ import java.util.Optional;
 @Repository
 public interface MeasurementRepository extends JpaRepository<Measurement, Long> {
 
-    Optional<Measurement> findByStartTime(LocalDateTime startTime);
+    Optional<Measurement> findFirstByStartTimeOrderByIdAsc(LocalDateTime startTime);
 
     boolean existsByStartTime(LocalDateTime startTime);
+
+    boolean existsByStation_IdAndStartTime(Integer stationId, LocalDateTime startTime);
 
     List<Measurement> findByStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAsc(
             LocalDateTime from,
@@ -41,7 +44,7 @@ public interface MeasurementRepository extends JpaRepository<Measurement, Long> 
         WHERE m.startTime >= :from
         AND m.startTime < :to
     """)
-    Integer findMinOzoneBetween(LocalDateTime from, LocalDateTime to);
+    BigDecimal findMinOzoneBetween(LocalDateTime from, LocalDateTime to);
 
     @Query("""
         SELECT MAX(m.ozone)
@@ -49,7 +52,7 @@ public interface MeasurementRepository extends JpaRepository<Measurement, Long> 
         WHERE m.startTime >= :from
         AND m.startTime < :to
     """)
-    Integer findMaxOzoneBetween(LocalDateTime from, LocalDateTime to);
+    BigDecimal findMaxOzoneBetween(LocalDateTime from, LocalDateTime to);
 
     Optional<Measurement> findTopByStartTimeGreaterThanEqualAndStartTimeLessThanOrderByOzoneAsc(
             LocalDateTime from,
@@ -67,7 +70,7 @@ public interface MeasurementRepository extends JpaRepository<Measurement, Long> 
     );
 
     List<Measurement> findByOzoneGreaterThanEqualAndStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAsc(
-            int threshold,
+            BigDecimal threshold,
             LocalDateTime from,
             LocalDateTime to
     );

@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +35,7 @@ public class MeasurementService {
 
     @Transactional(readOnly = true)
     public Measurement getByStartTime(LocalDateTime startTime) {
-        return measurementRepository.findByStartTime(startTime)
+        return measurementRepository.findFirstByStartTimeOrderByIdAsc(startTime)
                 .orElseThrow(() -> new NoSuchElementException(
                         "No measurement found for start time: " + startTime
                 ));
@@ -49,6 +50,16 @@ public class MeasurementService {
     @Transactional(readOnly = true)
     public boolean existsByStartTime(LocalDateTime startTime) {
         return measurementRepository.existsByStartTime(startTime);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByStationIdAndStartTime(Integer stationId, LocalDateTime startTime) {
+        return measurementRepository.existsByStation_IdAndStartTime(stationId, startTime);
+    }
+
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return measurementRepository.count();
     }
 
     @Transactional(readOnly = true)
@@ -129,15 +140,15 @@ public class MeasurementService {
     public Map<String, Object> getRangeBetween(LocalDateTime from, LocalDateTime to) {
         validateDataExists(from, to);
 
-        Integer min = measurementRepository.findMinOzoneBetween(from, to);
-        Integer max = measurementRepository.findMaxOzoneBetween(from, to);
+        BigDecimal min = measurementRepository.findMinOzoneBetween(from, to);
+        BigDecimal max = measurementRepository.findMaxOzoneBetween(from, to);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("from", from);
         response.put("to", to);
         response.put("minValue", min);
         response.put("maxValue", max);
-        response.put("range", max - min);
+        response.put("range", max.subtract(min));
         response.put("unit", UNIT);
 
         return response;
@@ -191,7 +202,7 @@ public class MeasurementService {
 
         return measurementRepository
                 .findByOzoneGreaterThanEqualAndStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAsc(
-                        threshold,
+                        BigDecimal.valueOf(threshold),
                         from,
                         to
                 )
@@ -210,13 +221,13 @@ public class MeasurementService {
         validateDataExists(from, to);
 
         Double average = measurementRepository.calculateAverageBetween(from, to);
-        Integer min = measurementRepository.findMinOzoneBetween(from, to);
-        Integer max = measurementRepository.findMaxOzoneBetween(from, to);
+        BigDecimal min = measurementRepository.findMinOzoneBetween(from, to);
+        BigDecimal max = measurementRepository.findMaxOzoneBetween(from, to);
         long measurementCount = measurementRepository.countByStartTimeGreaterThanEqualAndStartTimeLessThan(from, to);
 
         long criticalMeasurements = measurementRepository
                 .findByOzoneGreaterThanEqualAndStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAsc(
-                        DEFAULT_CRITICAL_THRESHOLD,
+                        BigDecimal.valueOf(DEFAULT_CRITICAL_THRESHOLD),
                         from,
                         to
                 )
@@ -228,7 +239,7 @@ public class MeasurementService {
         response.put("average", average);
         response.put("minValue", min);
         response.put("maxValue", max);
-        response.put("range", max - min);
+        response.put("range", max.subtract(min));
         response.put("measurementCount", measurementCount);
         response.put("criticalMeasurements", criticalMeasurements);
         response.put("threshold", DEFAULT_CRITICAL_THRESHOLD);
@@ -261,6 +272,9 @@ public class MeasurementService {
 
     private Map<String, Object> toDtoWithUnit(Measurement measurement) {
         Map<String, Object> dto = new LinkedHashMap<>(measurement.toDto());
+        if (measurement.getStation() != null) {
+            dto.put("stationId", measurement.getStation().getId());
+        }
         dto.put("unit", UNIT);
         return dto;
     }

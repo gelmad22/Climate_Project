@@ -2,15 +2,19 @@ package at.kaindorf.climate_project.db;
 
 import at.kaindorf.climate_project.services.MeasurementService;
 import at.kaindorf.climate_project.pojo.Measurement;
+import at.kaindorf.climate_project.pojo.Station;
+import at.kaindorf.climate_project.repositories.StationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,14 +29,20 @@ import java.util.OptionalInt;
 public class InitDb implements CommandLineRunner {
 
     private MeasurementService measurementService;
+    private StationRepository stationRepository;
+    private ResourceLoader resourceLoader;
     private ObjectMapper objectMapper;
     private String importFilePath;
 
     public InitDb(
             MeasurementService measurementService,
-            @Value("${climate.ozone.import.file:}") String importFilePath
+            StationRepository stationRepository,
+            ResourceLoader resourceLoader,
+            @Value("${climate.ozone.import.file:classpath:data.json}") String importFilePath
     ) {
         this.measurementService = measurementService;
+        this.stationRepository = stationRepository;
+        this.resourceLoader = resourceLoader;
         this.objectMapper = JsonMapper.builder().build();
         this.importFilePath = importFilePath;
     }
@@ -43,53 +53,64 @@ public class InitDb implements CommandLineRunner {
             return;
         }
 
-        Path importPath = Path.of(importFilePath).toAbsolutePath().normalize();
-
-        if (!Files.isRegularFile(importPath)) {
-            throw new IllegalStateException("Configured ozone import file does not exist: " + importPath);
+        if (measurementService.countAll() > 0) {
+            return;
         }
 
         try {
-            importOzoneMeasurements(importPath);
+            importOzoneMeasurements();
         } catch (Exception e) {
-            throw new IllegalStateException("Could not import ozone measurements from " + importPath, e);
+            throw new IllegalStateException("Could not import ozone measurements from " + importFilePath, e);
         }
     }
 
-    private void importOzoneMeasurements(Path importPath) throws Exception {
-        JsonNode rootNode = objectMapper.readTree(importPath);
+    private void importOzoneMeasurements() throws Exception {
+        Resource importResource = resourceLoader.getResource(importFilePath);
+
+        if (!importResource.exists()) {
+            throw new IllegalStateException("Configured ozone import file does not exist: " + importFilePath);
+        }
+
+        JsonNode rootNode;
+
+        try (InputStream inputStream = importResource.getInputStream()) {
+            rootNode = objectMapper.readTree(inputStream);
+        }
+
         JsonNode dataNode = rootNode.path("data");
 
         if (!dataNode.isObject()) {
             throw new IllegalArgumentException("JSON does not contain an object field named data");
         }
 
-        JsonNode stationNode = dataNode.get("1528");
+        for (Map.Entry<String, JsonNode> stationEntry : dataNode.properties()) {
+            Integer stationId = Integer.parseInt(stationEntry.getKey());
+            JsonNode stationNode = stationEntry.getValue();
 
-        if (stationNode == null || !stationNode.isObject()) {
-            throw new IllegalArgumentException("JSON does not contain data for station 1528");
+            if (!stationNode.isObject()) {
+                continue;
+            }
+
+            Station station = stationRepository.findById(stationId)
+                    .orElseGet(() -> stationRepository.save(new Station(stationId)));
+
+            importStationMeasurements(station, stationNode);
         }
-
-        importStationMeasurements(stationNode);
     }
 
-    private void importStationMeasurements(JsonNode stationNode) {
+    private void importStationMeasurements(Station station, JsonNode stationNode) {
         List<Measurement> batch = new ArrayList<>(1000);
 
         for (Map.Entry<String, JsonNode> entry : stationNode.properties()) {
             Measurement measurement;
 
             try {
-                measurement = parseMeasurement(entry.getKey(), entry.getValue());
+                measurement = parseMeasurement(station, entry.getKey(), entry.getValue());
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 continue;
             }
 
             if (measurement == null) {
-                continue;
-            }
-
-            if (measurementService.existsByStartTime(measurement.getStartTime())) {
                 continue;
             }
 
@@ -103,7 +124,7 @@ public class InitDb implements CommandLineRunner {
         saveBatch(batch);
     }
 
-    private Measurement parseMeasurement(String startTimeText, JsonNode valuesNode) {
+    private Measurement parseMeasurement(Station station, String startTimeText, JsonNode valuesNode) {
         if (!valuesNode.isArray() || valuesNode.size() < 5) {
             throw new IllegalArgumentException("measurement entry must be an array with 5 values");
         }
@@ -115,10 +136,11 @@ public class InitDb implements CommandLineRunner {
             return null;
         }
 
-        int ozoneValue = readInt(valuesNode.get(2), "ozone value");
+        BigDecimal ozoneValue = readDecimal(valuesNode.get(2), "ozone value");
         String endTimeText = readText(valuesNode.get(3), "end time");
 
         Measurement measurement = new Measurement();
+        measurement.setStation(station);
         measurement.setOzone(ozoneValue);
         measurement.setStartTime(parseDateTime(startTimeText));
         measurement.setEndTime(parseDateTime(endTimeText));
@@ -148,6 +170,20 @@ public class InitDb implements CommandLineRunner {
 
         if (value.isEmpty() || value.get().isBlank()) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+
+        return value.get();
+    }
+
+    private BigDecimal readDecimal(JsonNode node, String fieldName) {
+        if (node == null) {
+            throw new IllegalArgumentException(fieldName + " must be a number");
+        }
+
+        Optional<BigDecimal> value = node.decimalValueOpt();
+
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " must be a number");
         }
 
         return value.get();
