@@ -1,4 +1,4 @@
-package at.kaindorf.climate_project.services;
+package at.kaindorf.climate_project.Services;
 
 import at.kaindorf.climate_project.repositories.MeasurementRepository;
 import at.kaindorf.climate_project.pojo.Measurement;

@@ -1,6 +1,6 @@
 package at.kaindorf.climate_project.db;
 
-import at.kaindorf.climate_project.services.MeasurementService;
+import at.kaindorf.climate_project.Services.MeasurementService;
 import at.kaindorf.climate_project.pojo.Measurement;
 import at.kaindorf.climate_project.pojo.Station;
 import at.kaindorf.climate_project.repositories.StationRepository;
