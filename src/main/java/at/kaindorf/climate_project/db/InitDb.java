@@ -1,6 +1,6 @@
 package at.kaindorf.climate_project.db;
 
-import at.kaindorf.climate_project.Services.MeasurementService;
+import at.kaindorf.climate_project.services.MeasurementService;
 import at.kaindorf.climate_project.pojo.Measurement;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
