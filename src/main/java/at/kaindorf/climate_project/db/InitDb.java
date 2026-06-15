@@ -92,7 +92,7 @@ public class InitDb implements CommandLineRunner {
             }
 
             Station station = stationRepository.findById(stationId)
-                    .orElseGet(() -> stationRepository.save(new Station(stationId)));
+                    .orElseGet(() -> stationRepository.save(Station.builder().id(stationId).build()));
 
             importStationMeasurements(station, stationNode);
         }
@@ -139,12 +139,12 @@ public class InitDb implements CommandLineRunner {
         BigDecimal ozoneValue = readDecimal(valuesNode.get(2), "ozone value");
         String endTimeText = readText(valuesNode.get(3), "end time");
 
-        Measurement measurement = new Measurement();
-        measurement.setStation(station);
-        measurement.setOzone(ozoneValue);
-        measurement.setStartTime(parseDateTime(startTimeText));
-        measurement.setEndTime(parseDateTime(endTimeText));
-        return measurement;
+        return Measurement.builder()
+                .station(station)
+                .ozone(ozoneValue)
+                .startTime(parseDateTime(startTimeText))
+                .endTime(parseDateTime(endTimeText))
+                .build();
     }
 
     private int readInt(JsonNode node, String fieldName) {
