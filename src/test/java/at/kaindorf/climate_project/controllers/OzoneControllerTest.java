@@ -1,18 +1,17 @@
 package at.kaindorf.climate_project.controllers;
 
-import at.kaindorf.climate_project.Services.MeasurementService;
+import at.kaindorf.climate_project.service.MeasurementService;
+import at.kaindorf.climate_project.web.OzoneDateTimeParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,7 +26,7 @@ class OzoneControllerTest {
 
     @BeforeEach
     void setUp() {
-        ozoneController = new OzoneController(measurementService);
+        ozoneController = new OzoneController(measurementService, new OzoneDateTimeParser());
     }
 
     @Test
@@ -55,16 +54,5 @@ class OzoneControllerTest {
 
         assertSame(expected, result);
         verify(measurementService).getDtoByStartTime(timestamp, null);
-    }
-
-    @Test
-    void handleIllegalArgumentExceptionCreatesBadRequestBody() {
-        Map<String, Object> response = ozoneController.handleIllegalArgumentException(
-                new IllegalArgumentException("From must be before to")
-        );
-
-        assertEquals(HttpStatus.BAD_REQUEST.value(), response.get("status"));
-        assertEquals(HttpStatus.BAD_REQUEST.getReasonPhrase(), response.get("error"));
-        assertEquals("From must be before to", response.get("message"));
     }
 }

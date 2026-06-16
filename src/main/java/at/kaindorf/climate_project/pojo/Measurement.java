@@ -2,7 +2,6 @@ package at.kaindorf.climate_project.pojo;
 
 import at.kaindorf.climate_project.annotations.ToDto;
 import at.kaindorf.climate_project.mapper.DtoMapper;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,7 +14,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -33,7 +31,6 @@ import java.util.Map;
         }
 )
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class Measurement {
     @Id
@@ -50,12 +47,10 @@ public class Measurement {
 
     @ToDto
     @Column(name = "start_time", nullable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
 
     @ToDto
     @Column(name = "end_time", nullable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
 
     @Column(name = "created_at")

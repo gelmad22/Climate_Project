@@ -1,6 +1,6 @@
 package at.kaindorf.climate_project.db;
 
-import at.kaindorf.climate_project.Services.MeasurementService;
+import at.kaindorf.climate_project.service.MeasurementService;
 import at.kaindorf.climate_project.pojo.Measurement;
 import at.kaindorf.climate_project.pojo.Station;
 import at.kaindorf.climate_project.repositories.StationRepository;
@@ -28,11 +28,11 @@ import java.util.OptionalInt;
 @Component
 public class InitDb implements CommandLineRunner {
 
-    private MeasurementService measurementService;
-    private StationRepository stationRepository;
-    private ResourceLoader resourceLoader;
-    private ObjectMapper objectMapper;
-    private String importFilePath;
+    private final MeasurementService measurementService;
+    private final StationRepository stationRepository;
+    private final ResourceLoader resourceLoader;
+    private final ObjectMapper objectMapper;
+    private final String importFilePath;
 
     public InitDb(
             MeasurementService measurementService,

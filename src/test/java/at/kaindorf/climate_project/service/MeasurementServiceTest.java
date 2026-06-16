@@ -1,4 +1,4 @@
-package at.kaindorf.climate_project.Services;
+package at.kaindorf.climate_project.service;
 
 import at.kaindorf.climate_project.pojo.Measurement;
 import at.kaindorf.climate_project.pojo.Station;
@@ -89,16 +89,16 @@ class MeasurementServiceTest {
     }
 
     @Test
-    void getTopValuesBetweenRejectsNonPositiveLimit() {
+    void getCriticalMeasurementsBetweenRejectsNonPositiveThreshold() {
         LocalDateTime from = LocalDateTime.of(2026, 6, 15, 8, 0);
         LocalDateTime to = from.plusHours(1);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> measurementService.getTopValuesBetween(from, to, 0, null)
+                () -> measurementService.getCriticalMeasurementsBetween(from, to, 0, null)
         );
 
-        assertEquals("Limit must be greater than 0", exception.getMessage());
+        assertEquals("Threshold must be greater than 0", exception.getMessage());
         verifyNoInteractions(measurementRepository);
     }
 
